@@ -26,11 +26,32 @@ from subprocess import call
 from docopt import docopt
 import magic
 
+def guess_type(filename):
+  magic_guess = magic.from_file(filename)
+  if magic_guess.startswith('gzip'):
+    if filename.endswith('tgz') or filename.endswith('tar.gz'):
+      return 'tar.gz'
+    else:
+      return 'gzip'
+  elif magic_guess.startswith('bzip'):
+    if filename.endswith('tbz2') or filename.endswith('tar.bz2'):
+      return 'tar.bz2'
+    else:
+      return 'bzip'
+  elif magic_guess.startswith('Zip'):
+    return 'zip'
+
 def list_contents(archive, arguments):
   a = archive[0]
-  filetype = magic.from_file(a)
-  if filetype.startswith('gzip'):
-    call(["tar", "-tf", archive[0]])
+  gt = guess_type(a)
+  if gt in ['tar.gz', 'tar.bz2']:
+    call(["tar", "-tf", a])
+  elif gt == 'gzip':
+    call(["gzip", "-l", a])
+  elif gt == 'bzip':
+    print("Error: bzip is not an archive format")
+  elif gt == 'zip':
+    call(["unzip", "-l", a])
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='burr 0.1')
